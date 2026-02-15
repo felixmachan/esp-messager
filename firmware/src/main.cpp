@@ -159,8 +159,7 @@ void updateGifState(const String& newGifId, int frameCount, int frameDelayMs) {
   lastFrameMs = 0;
   gifMode = true;
 
-  Serial.printf("GIF ready id=%s frames=%d delay=%d size=%dx%d\n", gifId.c_str(), gifFrameCount, gifFrameDelayMs, FRAME_W, FRAME_H);
-  drawLines("GIF ready", "Streaming frames");
+  tft.fillScreen(TFT_BLACK);  // <-- EZ kell: egyszer töröl, nem minden frame-nél
 }
 
 void pollMessage() {
@@ -252,6 +251,8 @@ void setup() {
   tft.setRotation(1);
   Serial.printf("tft w=%d h=%d\n", tft.width(), tft.height());
   tft.setSwapBytes(true);
+  tft.invertDisplay(false);
+
 
   tft.fillScreen(TFT_RED);
   delay(120);

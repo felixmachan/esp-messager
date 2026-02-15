@@ -222,7 +222,13 @@ def _build_gif_frames(gif_url: str) -> tuple[str, int, int]:
 
         # Hard no-stretch mode: keep aspect ratio and center.
         fitted = ImageOps.contain(frame_rgb, (FRAME_WIDTH, FRAME_HEIGHT), Image.BILINEAR)
-        canvas = Image.new("RGB", (FRAME_WIDTH, FRAME_HEIGHT), (0, 0, 0))
+        canvas = ImageOps.fit(
+        frame_rgb,
+        (FRAME_WIDTH, FRAME_HEIGHT),
+        Image.BILINEAR,
+        centering=(0.5, 0.5),
+        )
+
         px = (FRAME_WIDTH - fitted.width) // 2
         py = (FRAME_HEIGHT - fitted.height) // 2
         canvas.paste(fitted, (px, py))
