@@ -130,7 +130,10 @@ bool fetchFrame(const String& id, int index) {
     return false;
   }
 
-  tft.pushImage(0, 0, FRAME_W, FRAME_H, frameBuffer);
+  int x = (tft.width() - FRAME_W) / 2;
+  int y = (tft.height() - FRAME_H) / 2;
+  tft.pushImage(x, y, FRAME_W, FRAME_H, frameBuffer);
+
   return true;
 }
 
