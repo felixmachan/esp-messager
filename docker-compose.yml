@@ -2,12 +2,18 @@ services:
   msgapi:
     build: .
     ports:
-      - "80:8000"
+      - "80:80"
     environment:
       - API_TOKEN=${API_TOKEN}
-      - DB_PATH=/data/messages.db
+      - STATE_PATH=/app/data/state.json
+      - TENOR_FEATURE_ENABLED=${TENOR_FEATURE_ENABLED:-0}
+      - TENOR_API_KEY=${TENOR_API_KEY:-}
+      - FRAME_WIDTH=${FRAME_WIDTH:-160}
+      - FRAME_HEIGHT=${FRAME_HEIGHT:-128}
+      - FRAME_ROTATE_DEG=${FRAME_ROTATE_DEG:-0}
+      - FRAME_PIPELINE_VERSION=${FRAME_PIPELINE_VERSION:-v6}
     volumes:
-      - msgdata:/data
+      - msgdata:/app/data
     restart: unless-stopped
 
 volumes:

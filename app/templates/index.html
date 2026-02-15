@@ -1,36 +1,184 @@
 <!doctype html>
-<html>
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>OLED Message</title>
-    <style>
-      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; max-width: 720px; margin: 40px auto; padding: 0 16px; }
-      .card { border: 1px solid #e5e7eb; border-radius: 16px; padding: 16px; }
-      input, textarea { width: 100%; padding: 10px; border-radius: 12px; border: 1px solid #d1d5db; }
-      textarea { min-height: 90px; }
-      button { padding: 10px 14px; border-radius: 12px; border: 0; cursor: pointer; }
-      .row { display: grid; gap: 12px; }
-      .muted { color: #6b7280; }
-      code { background: #f3f4f6; padding: 2px 6px; border-radius: 8px; }
-    </style>
-  </head>
-  <body>
-    <h1>OLED Message Server</h1>
-    <div class="card row">
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>ESP Messager</title>
+  <style>
+    :root {
+      --bg: #f4f7fb;
+      --card: #ffffff;
+      --border: #d4dbe6;
+      --text: #10243d;
+      --ok: #11823b;
+      --bad: #c03434;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      padding: 16px;
+    }
+    .wrap {
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .banner {
+      display: none;
+      margin-bottom: 12px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #fff;
+      font-weight: 600;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+    h1 { margin: 0 0 10px; font-size: 24px; }
+    h2 { margin: 0 0 10px; font-size: 18px; }
+    p { margin: 0 0 10px; }
+    label { display: block; margin-bottom: 8px; font-weight: 600; }
+    textarea, input[type="text"] {
+      width: 100%;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    textarea { min-height: 100px; resize: vertical; }
+    button {
+      border: 0;
+      border-radius: 8px;
+      background: #174a7a;
+      color: #fff;
+      padding: 10px 14px;
+      font-size: 14px;
+      cursor: pointer;
+    }
+    .muted { color: #4d6075; font-size: 14px; }
+    code { background: #edf2f7; padding: 2px 6px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div id="statusBanner" class="banner"></div>
+    <div class="card">
+      <h1>ESP Message + GIF</h1>
       {% if not authed %}
-        <p class="muted">Add meg a tokent a URL-ben: <code>/?token=...</code></p>
+        <p>Token missing or invalid.</p>
+        <p class="muted">Open: <code>/?token=RANDOM123</code></p>
+        <p class="muted">ESP poll URL: <code>/msg?token=RANDOM123</code></p>
       {% else %}
-        <p class="muted">ESP endpoint: <code>/msg?token={{token}}</code></p>
-        <form method="post" action="/ui/set" class="row">
-          <input type="hidden" name="token" value="{{token}}" />
-          <label>
-            Üzenet:
-            <textarea name="text" maxlength="200">{{text}}</textarea>
-          </label>
-          <button type="submit">Mentés</button>
-        </form>
+        <p class="muted">ESP poll URL: <code>/msg?token={{ token }}</code></p>
+        <p class="muted">Current state:
+          {% if state.type == "gif" %}
+            GIF
+          {% else %}
+            Text
+          {% endif %}
+        </p>
       {% endif %}
     </div>
-  </body>
+
+    {% if authed %}
+    <div class="card">
+      <h2>Send Text</h2>
+      <form id="textForm" method="post" action="/ui/set">
+        <input type="hidden" name="token" value="{{ token }}" />
+        <label for="textInput">Message (max 200 chars)</label>
+        <textarea id="textInput" name="text" maxlength="200" placeholder="Type a message...">{% if state.type == "text" %}{{ state.text }}{% endif %}</textarea>
+        <button type="submit">Send</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Send GIF</h2>
+      <form id="gifForm" method="post" action="/ui/gif">
+        <input type="hidden" name="token" value="{{ token }}" />
+        <label for="gifInput">Tenor URL or direct GIF URL</label>
+        <input id="gifInput" type="text" name="gif_url" maxlength="500" placeholder="https://tenor.com/... or https://...gif" value="{% if state.type == 'gif' %}{{ state.gif_url }}{% endif %}" />
+        <button type="submit">Send GIF</button>
+      </form>
+    </div>
+
+    <div class="card" id="tenorPanel" style="display:none;">
+      <h2>Search Tenor</h2>
+      <p class="muted">Feature is disabled by default. Enable with <code>TENOR_FEATURE_ENABLED=1</code>.</p>
+    </div>
+    {% endif %}
+  </div>
+
+  <script>
+    const statusBanner = document.getElementById("statusBanner");
+
+    function showStatus(text, ok) {
+      if (!statusBanner) return;
+      statusBanner.textContent = text;
+      statusBanner.style.background = ok ? "var(--ok)" : "var(--bad)";
+      statusBanner.style.display = "block";
+      setTimeout(() => {
+        statusBanner.style.display = "none";
+      }, 2000);
+    }
+
+    const textForm = document.getElementById("textForm");
+    if (textForm) {
+      textForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const formData = new FormData(textForm);
+        try {
+          const res = await fetch("/ui/set", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              token: String(formData.get("token") || ""),
+              text: String(formData.get("text") || "")
+            })
+          });
+          if (!res.ok) throw new Error("request failed");
+          showStatus("Message sent \u2705", true);
+        } catch {
+          showStatus("Send failed \u274c", false);
+        }
+      });
+    }
+
+    const gifForm = document.getElementById("gifForm");
+    if (gifForm) {
+      gifForm.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const formData = new FormData(gifForm);
+        try {
+          const res = await fetch("/ui/gif", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: new URLSearchParams({
+              token: String(formData.get("token") || ""),
+              gif_url: String(formData.get("gif_url") || "")
+            })
+          });
+          if (!res.ok) {
+            let msg = "Send failed \\u274c";
+            try {
+              const payload = await res.json();
+              if (payload && payload.message) msg = payload.message;
+            } catch {}
+            showStatus(msg, false);
+            return;
+          }
+          showStatus("GIF sent \ud83c\udf89", true);
+        } catch {
+          showStatus("Send failed \u274c", false);
+        }
+      });
+    }
+  </script>
+</body>
 </html>
