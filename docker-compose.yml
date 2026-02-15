@@ -4,7 +4,7 @@ services:
     ports:
       - "80:8000"
     environment:
-      - API_TOKEN=IRJ_IDE_EGY_HOSSZU_RANDOM_TOKENT
+      - API_TOKEN=${API_TOKEN}
       - DB_PATH=/data/messages.db
     volumes:
       - msgdata:/data
