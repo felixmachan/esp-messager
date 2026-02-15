@@ -1,0 +1,14 @@
+services:
+  msgapi:
+    build: .
+    ports:
+      - "80:8000"
+    environment:
+      - API_TOKEN=IRJ_IDE_EGY_HOSSZU_RANDOM_TOKENT
+      - DB_PATH=/data/messages.db
+    volumes:
+      - msgdata:/data
+    restart: unless-stopped
+
+volumes:
+  msgdata:
